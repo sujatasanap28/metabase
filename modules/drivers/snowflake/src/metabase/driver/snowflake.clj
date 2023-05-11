@@ -36,7 +36,8 @@
   (:import
    (java.io File)
    (java.sql Connection DatabaseMetaData ResultSet Types)
-   (java.time OffsetDateTime ZonedDateTime)))
+   (java.time OffsetDateTime ZonedDateTime)
+   (net.snowflake.client.jdbc SnowflakeStatement)))
 
 (set! *warn-on-reflection* true)
 

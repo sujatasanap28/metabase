@@ -329,7 +329,6 @@
       ;; to be a hint to the driver to enable database optimizations
       ;; See https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html#setReadOnly-boolean-
       (.setReadOnly conn read-only?)
-
       (catch Throwable e
         (log/debug e (trs "Error setting connection readOnly to {0}" (pr-str read-only?))))))
   (let [auto-commit? (boolean write?)]
