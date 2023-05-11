@@ -21,6 +21,7 @@
    [metabase.lib.schema.literal.jvm :as lib.schema.literal.jvm]
    [metabase.models.database :refer [Database]]
    [metabase.models.setting :refer [defsetting]]
+   [metabase.public-settings.premium-features :refer [defenterprise]]
    [metabase.query-processor.context :as qp.context]
    [metabase.query-processor.error-type :as qp.error-type]
    [metabase.query-processor.middleware.limit :as limit]
@@ -223,6 +224,11 @@
         (catch Throwable e
           (log/error e (trs "Failed to set timezone ''{0}'' for {1} database" timezone-id driver)))))))
 
+(defenterprise set-role-if-supported!
+  "OSS no-op implementation of `set-role-if-supported!`."
+  metabase-enterprise.advanced-permissions.driver.impersonation
+  [_ _ _])
+
 ;; TODO - since we're not running the queries in a transaction, does this make any difference at all?
 (defn set-best-transaction-level!
   "Set the connection transaction isolation level to the least-locking level supported by the DB. See
@@ -308,16 +314,21 @@
   Connection."
   {:added "0.47.0"}
   [driver                                                  :- :keyword
+   db-or-id-or-spec
    ^Connection conn                                        :- (lib.schema.literal.jvm/instance-of Connection)
    {:keys [^String session-timezone write?], :as _options} :- ConnectionOptions]
   (set-best-transaction-level! driver conn)
   (set-time-zone-if-supported! driver conn session-timezone)
+  (set-role-if-supported! driver conn (when (u/id db-or-id-or-spec) (if (integer? db-or-id-or-spec)
+                                                                      (t2/select-one Database db-or-id-or-spec)
+                                                                      db-or-id-or-spec)))
   (let [read-only? (not write?)]
     (try
       ;; Setting the connection to read-only does not prevent writes on some databases, and is meant
       ;; to be a hint to the driver to enable database optimizations
       ;; See https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html#setReadOnly-boolean-
       (.setReadOnly conn read-only?)
+
       (catch Throwable e
         (log/debug e (trs "Error setting connection readOnly to {0}" (pr-str read-only?))))))
   (let [auto-commit? (boolean write?)]
@@ -335,7 +346,10 @@
 (defmethod do-with-connection-with-options :sql-jdbc
   [driver db-or-id-or-spec options f]
   (do-with-resolved-connection driver db-or-id-or-spec options (fn [^java.sql.Connection conn]
-                                                                 (set-default-connection-options! driver conn options)
+                                                                 (set-default-connection-options! driver
+                                                                                                  db-or-id-or-spec
+                                                                                                  conn
+                                                                                                  options)
                                                                  (f conn))))
 
 ;; TODO - would a more general method to convert a parameter to the desired class (and maybe JDBC type) be more
