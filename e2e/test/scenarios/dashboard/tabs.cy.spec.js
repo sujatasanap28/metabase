@@ -57,4 +57,7 @@ describe("scenarios > dashboard tabs", () => {
       cy.findByText("Orders").should("be.visible");
     });
   });
+
+  // TODO
+  it("should only fetch cards on the current tab", () => {});
 });
