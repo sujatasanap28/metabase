@@ -72,7 +72,8 @@
     :model/TimelineEvent
     :model/User
     :model/ViewLog
-    :metabase-enterprise.sandbox.models.group-table-access-policy/GroupTableAccessPolicy})
+    :metabase-enterprise.sandbox.models.group-table-access-policy/GroupTableAccessPolicy
+    :model/ConnectionImpersonation})
 
 (deftest ^:parallel comprehensive-entity-id-test
   (doseq [model (->> (v2.seed-entity-ids/toucan-models)
