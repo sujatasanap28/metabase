@@ -7,6 +7,8 @@ import {
   sidebar,
   popover,
   visitDashboardAndCreateTab,
+  visitCollection,
+  main,
 } from "e2e/support/helpers";
 
 describe("scenarios > dashboard tabs", () => {
@@ -55,6 +57,24 @@ describe("scenarios > dashboard tabs", () => {
     cy.findByRole("tab", { name: "Tab 1" }).click();
     dashboardCards().within(() => {
       cy.findByText("Orders").should("be.visible");
+    });
+  });
+
+  it("should update slug in url after creating a new tab and saving", () => {
+    visitDashboardAndCreateTab({ dashboardId: 1 });
+    cy.url().should("include", "2-page-2");
+  });
+
+  it("should leave dashboard if navigating back after initial load", () => {
+    visitDashboardAndCreateTab({ dashboardId: 1 });
+    visitCollection("root");
+
+    main().within(() => {
+      cy.findByText("Orders in a dashboard").click();
+    });
+    cy.go("back");
+    main().within(() => {
+      cy.findByText("Our analytics").should("be.visible");
     });
   });
 });
