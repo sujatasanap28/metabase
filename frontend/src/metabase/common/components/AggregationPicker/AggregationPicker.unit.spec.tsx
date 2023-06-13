@@ -102,12 +102,14 @@ type SetupOpts = {
   query?: Lib.Query;
   metrics?: Metric[];
   hasExpressionSupport?: boolean;
+  hasExpressionInput?: boolean;
 };
 
 function setup({
   query = createQuery(),
   metrics = [],
   hasExpressionSupport = true,
+  hasExpressionInput = true,
 }: SetupOpts = {}) {
   const metadata = createMockMetadata({
     databases: [
@@ -154,6 +156,7 @@ function setup({
       legacyClause={legacyQuery.aggregations()[0]}
       stageIndex={0}
       operators={operators}
+      hasExpressionInput={hasExpressionInput}
       onSelect={handleSelect}
       onSelectLegacy={onSelectLegacy}
     />,
@@ -401,13 +404,28 @@ describe("AggregationPicker", () => {
       );
     });
 
+    it("should open the editor when an expression is used", async () => {
+      setup({ query: createQueryWithInlineExpression() });
+
+      expect(screen.getByText("Custom Expression")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Avg Q")).toBeInTheDocument();
+    });
+
     it("shouldn't be available if database doesn't support custom expressions", () => {
       setup({ hasExpressionSupport: false });
       expect(screen.queryByText("Custom Expression")).not.toBeInTheDocument();
     });
 
-    it("should open the editor when an expression is used", async () => {
-      setup({ query: createQueryWithInlineExpression() });
+    it("shouldn't be shown if `hasExpressionInput` prop is false", () => {
+      setup({ hasExpressionInput: false });
+      expect(screen.queryByText("Custom Expression")).not.toBeInTheDocument();
+    });
+
+    it("should open the editor even if `hasExpressionInput` prop is false if expression is used", () => {
+      setup({
+        query: createQueryWithInlineExpression(),
+        hasExpressionInput: false,
+      });
 
       expect(screen.getByText("Custom Expression")).toBeInTheDocument();
       expect(screen.getByDisplayValue("Avg Q")).toBeInTheDocument();
