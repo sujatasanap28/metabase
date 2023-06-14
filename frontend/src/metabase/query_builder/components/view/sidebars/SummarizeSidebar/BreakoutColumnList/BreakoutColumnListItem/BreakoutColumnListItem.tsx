@@ -65,7 +65,7 @@ export function BreakoutColumnListItem({
           isEditing={isSelected}
           hasArrowIcon={false}
           onSelect={column =>
-            breakout ? onUpdateColumn(column) : onReplaceColumns?.(column)
+            breakout ? onUpdateColumn(column) : onAddColumn(column)
           }
         />
       );
@@ -87,21 +87,14 @@ export function BreakoutColumnListItem({
           isEditing={isSelected}
           hasArrowIcon={false}
           onSelect={column =>
-            breakout ? onUpdateColumn(column) : onReplaceColumns?.(column)
+            breakout ? onUpdateColumn(column) : onAddColumn(column)
           }
         />
       );
     }
 
     return null;
-  }, [
-    query,
-    breakout,
-    item.column,
-    isSelected,
-    onUpdateColumn,
-    onReplaceColumns,
-  ]);
+  }, [query, breakout, item.column, isSelected, onAddColumn, onUpdateColumn]);
 
   const displayName = isPinned ? item.longDisplayName : item.displayName;
 
