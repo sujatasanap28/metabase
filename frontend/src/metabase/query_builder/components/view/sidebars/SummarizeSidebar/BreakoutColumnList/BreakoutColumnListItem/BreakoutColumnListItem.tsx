@@ -15,11 +15,12 @@ import {
   TemporalBucketPickerPopover,
 } from "./BreakoutColumnListItem.styled";
 
+const STAGE_INDEX = -1;
+
 interface BreakoutColumnListItemProps {
   query: Lib.Query;
-  stageIndex: number;
   item: Lib.ColumnDisplayInfo & { column: Lib.ColumnMetadata };
-  clause?: Lib.BreakoutClause;
+  breakout?: Lib.BreakoutClause;
   onAddColumn: (column: Lib.ColumnMetadata) => void;
   onUpdateColumn: (column: Lib.ColumnMetadata) => void;
   onRemoveColumn: (column: Lib.ColumnMetadata) => void;
@@ -28,9 +29,8 @@ interface BreakoutColumnListItemProps {
 
 export function BreakoutColumnListItem({
   query,
-  stageIndex,
   item,
-  clause,
+  breakout,
   onAddColumn,
   onUpdateColumn,
   onRemoveColumn,
@@ -49,7 +49,7 @@ export function BreakoutColumnListItem({
   const renderBucketPicker = useCallback(() => {
     const binningStrategies = Lib.availableBinningStrategies(
       query,
-      stageIndex,
+      STAGE_INDEX,
       item.column,
     );
 
@@ -57,13 +57,13 @@ export function BreakoutColumnListItem({
       return (
         <BinningStrategyPickerPopover
           query={query}
-          stageIndex={stageIndex}
+          stageIndex={STAGE_INDEX}
           buckets={binningStrategies}
           column={item.column}
           isEditing={isSelected}
           hasArrowIcon={false}
           onSelect={column =>
-            clause ? onUpdateColumn(column) : onReplaceColumns?.(column)
+            breakout ? onUpdateColumn(column) : onReplaceColumns?.(column)
           }
         />
       );
@@ -71,7 +71,7 @@ export function BreakoutColumnListItem({
 
     const temporalBuckets = Lib.availableTemporalBuckets(
       query,
-      stageIndex,
+      STAGE_INDEX,
       item.column,
     );
 
@@ -79,13 +79,13 @@ export function BreakoutColumnListItem({
       return (
         <TemporalBucketPickerPopover
           query={query}
-          stageIndex={stageIndex}
+          stageIndex={STAGE_INDEX}
           buckets={temporalBuckets}
           column={item.column}
           isEditing={isSelected}
           hasArrowIcon={false}
           onSelect={column =>
-            clause ? onUpdateColumn(column) : onReplaceColumns?.(column)
+            breakout ? onUpdateColumn(column) : onReplaceColumns?.(column)
           }
         />
       );
@@ -94,8 +94,7 @@ export function BreakoutColumnListItem({
     return null;
   }, [
     query,
-    stageIndex,
-    clause,
+    breakout,
     item.column,
     isSelected,
     onUpdateColumn,
