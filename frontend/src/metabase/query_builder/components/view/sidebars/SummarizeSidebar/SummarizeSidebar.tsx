@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { t } from "ttag";
 
 import { color } from "metabase/lib/colors";
@@ -36,50 +36,33 @@ export function SummarizeSidebar({
   const [isDefaultAggregationRemoved, setDefaultAggregationRemoved] =
     useState(false);
 
-  const [query, _setQuery] = useState(
-    getQuery(initialQuery, isDefaultAggregationRemoved),
+  const query = useMemo(
+    () => getQuery(initialQuery, isDefaultAggregationRemoved),
+    [initialQuery, isDefaultAggregationRemoved],
   );
-  const [legacyQuery, _setLegacyQuery] = useState(initialLegacyQuery);
+
+  const question = initialLegacyQuery.question();
+  const legacyQuery = question
+    .setDatasetQuery(Lib.toLegacyQuery(query))
+    .query() as StructuredQuery;
 
   const aggregations = Lib.aggregations(query, STAGE_INDEX);
   const hasAggregations = aggregations.length > 0;
 
-  const setQuery = useCallback(
-    (nextQuery: Lib.Query, { run = true } = {}) => {
-      const datasetQuery = Lib.toLegacyQuery(nextQuery);
-      const nextLegacyQuery = legacyQuery.setDatasetQuery(datasetQuery);
-      _setQuery(nextQuery);
-      _setLegacyQuery(nextLegacyQuery);
-      if (run) {
-        onQueryChange(nextQuery);
-      }
+  const handleLegacyQueryChange = useCallback(
+    (nextLegacyQuery: StructuredQuery) => {
+      const nextQuery = nextLegacyQuery.question()._getMLv2Query();
+      onQueryChange(nextQuery);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [onQueryChange],
   );
-
-  const setLegacyQuery = useCallback((nextLegacyQuery: StructuredQuery) => {
-    const nextQuery = nextLegacyQuery.question()._getMLv2Query();
-    _setQuery(nextQuery);
-    _setLegacyQuery(nextLegacyQuery);
-  }, []);
-
-  useEffect(() => {
-    const nextQuery = getQuery(initialQuery, isDefaultAggregationRemoved);
-    setQuery(nextQuery, { run: false });
-  }, [initialQuery, isDefaultAggregationRemoved, setQuery]);
-
-  const handleDoneClick = useCallback(() => {
-    onQueryChange(query);
-    onClose();
-  }, [query, onQueryChange, onClose]);
 
   const handleAddAggregation = useCallback(
     (aggregation: Lib.AggregationClause) => {
       const nextQuery = Lib.aggregate(query, STAGE_INDEX, aggregation);
-      setQuery(nextQuery);
+      onQueryChange(nextQuery);
     },
-    [query, setQuery],
+    [query, onQueryChange],
   );
 
   const handleUpdateAggregation = useCallback(
@@ -93,9 +76,9 @@ export function SummarizeSidebar({
         aggregation,
         nextAggregation,
       );
-      setQuery(nextQuery);
+      onQueryChange(nextQuery);
     },
-    [query, setQuery],
+    [query, onQueryChange],
   );
 
   const handleRemoveAggregation = useCallback(
@@ -105,9 +88,9 @@ export function SummarizeSidebar({
       if (nextAggregations.length === 0) {
         setDefaultAggregationRemoved(true);
       }
-      setQuery(nextQuery);
+      onQueryChange(nextQuery);
     },
-    [query, setQuery],
+    [query, onQueryChange],
   );
 
   const maybeApplyDefaultBucket = useCallback(
@@ -136,17 +119,17 @@ export function SummarizeSidebar({
         STAGE_INDEX,
         maybeApplyDefaultBucket(column),
       );
-      setQuery(nextQuery);
+      onQueryChange(nextQuery);
     },
-    [query, maybeApplyDefaultBucket, setQuery],
+    [query, maybeApplyDefaultBucket, onQueryChange],
   );
 
   const handleUpdateBreakout = useCallback(
     (clause: Lib.BreakoutClause, column: Lib.ColumnMetadata) => {
       const nextQuery = Lib.replaceClause(query, STAGE_INDEX, clause, column);
-      setQuery(nextQuery);
+      onQueryChange(nextQuery);
     },
-    [query, setQuery],
+    [query, onQueryChange],
   );
 
   const handleRemoveBreakout = useCallback(
@@ -156,10 +139,10 @@ export function SummarizeSidebar({
         const breakouts = Lib.breakouts(query, STAGE_INDEX);
         const clause = breakouts[breakoutPosition];
         const nextQuery = Lib.removeClause(query, STAGE_INDEX, clause);
-        setQuery(nextQuery);
+        onQueryChange(nextQuery);
       }
     },
-    [query, setQuery],
+    [query, onQueryChange],
   );
 
   const handleReplaceBreakouts = useCallback(
@@ -169,10 +152,15 @@ export function SummarizeSidebar({
         STAGE_INDEX,
         maybeApplyDefaultBucket(column),
       );
-      setQuery(nextQuery);
+      onQueryChange(nextQuery);
     },
-    [query, setQuery, maybeApplyDefaultBucket],
+    [query, onQueryChange, maybeApplyDefaultBucket],
   );
+
+  const handleDoneClick = useCallback(() => {
+    onQueryChange(query);
+    onClose();
+  }, [query, onQueryChange, onClose]);
 
   return (
     <SidebarView
@@ -195,14 +183,14 @@ export function SummarizeSidebar({
               handleUpdateAggregation(aggregation, nextAggregation)
             }
             onRemove={() => handleRemoveAggregation(aggregation)}
-            onLegacyQueryChange={setLegacyQuery}
+            onLegacyQueryChange={handleLegacyQueryChange}
           />
         ))}
         <AddAggregationButton
           query={query}
           legacyQuery={legacyQuery}
           onAddAggregation={handleAddAggregation}
-          onLegacyQueryChange={setLegacyQuery}
+          onLegacyQueryChange={handleLegacyQueryChange}
         />
       </AggregationsContainer>
       {hasAggregations && (
