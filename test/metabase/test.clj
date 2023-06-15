@@ -436,9 +436,13 @@
                                           (swap! collector conj [topic event-item])
                                           (original-publish-event! topic event-item))]
       (assert @#'events/events-initialized?, "events was not initialized")
-      (f {:events     (fn [] @collector)
-          :last-event #(last @collector)}))))
-
+      (f {:raw-events   (fn [] @collector) ; provide a way to get raw all events
+          :events       non-login-events
+          :last-event   #(last (non-login-events))
+          :topic->count (fn []
+                          (->> (non-login-events)
+                               (map first)
+                               frequencies))}))))
 
 (defmacro with-fake-events-collector
   "Creates a new fake events collector in a dynamic scope, and redefines the [[events/publish-event!]]
