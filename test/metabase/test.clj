@@ -431,7 +431,12 @@
   "Impl for `with-fake-events-collector` macro."
   [f]
   (let [original-publish-event! events/publish-event!
-        collector               (atom [])]
+        collector               (atom [])
+        ;; when testing with mt/user-http-request we could receive an user-login event
+        ;; for the first time it's called for an user.
+        ;; since most of the event tests does not concern this, we should filter it out
+        ;; to avoid flaky tests
+        non-login-events        (fn [] (remove #(#{:user-login} (first %)) @collector))]
     (with-redefs [events/publish-event! (fn [topic event-item]
                                           (swap! collector conj [topic event-item])
                                           (original-publish-event! topic event-item))]
