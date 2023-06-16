@@ -14,12 +14,8 @@
   "The `Set` of event topics which are subscribed to for use in revision tracking."
   #{:card-create
     :card-update
-    :card-enable-public
-    :card-disable-public
     :dashboard-create
     :dashboard-update
-    :dashboard-enable-public
-    :dashboard-disable-public
     :dashboard-add-cards
     :dashboard-remove-cards
     :dashboard-reposition-cards
